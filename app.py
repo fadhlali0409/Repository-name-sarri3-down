@@ -17,28 +17,34 @@ def download():
 
     data = request.json
     url = data.get("url", "").strip()
-
     if not url:
         return jsonify({"error": "الرابط مطلوب"}), 400
 
     try:
-        ydl_opts = {"quiet": True, "no_warnings": True}
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "extractor_args": {
+                "tiktok": {"webpage_download": ["1"]}
+            }
+        }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
         formats = []
-        seen = set()
+        seen_labels = set()
 
         for f in (info.get("formats") or []):
             furl = f.get("url", "")
             height = f.get("height")
+            width = f.get("width")
             acodec = f.get("acodec", "none")
             vcodec = f.get("vcodec", "none")
-            ext = f.get("ext", "")
+            ext = f.get("ext", "mp4")
+            tbr = f.get("tbr") or 0
 
-            if not furl or furl in seen:
+            if not furl:
                 continue
-            seen.add(furl)
 
             if vcodec != "none" and height:
                 label = f"{height}p"
@@ -49,6 +55,12 @@ def download():
             else:
                 continue
 
+            # تجنب التكرار بالجمع بين الجودة والحجم
+            unique_key = f"{label}_{round(tbr)}"
+            if unique_key in seen_labels:
+                continue
+            seen_labels.add(unique_key)
+
             size = f.get("filesize") or f.get("filesize_approx")
             size_str = f"{round(size/1024/1024)}MB" if size else "—"
 
@@ -57,13 +69,19 @@ def download():
                 "ext": ext.upper(),
                 "size": size_str,
                 "type": ftype,
-                "url": furl
+                "url": furl,
+                "tbr": tbr
             })
 
+        # ترتيب: أعلى جودة أولاً
         formats.sort(key=lambda x: (
             0 if x["type"] == "video" else 1,
-            -(int(x["label"].replace("p","")) if x["type"] == "video" and x["label"].endswith("p") else 0)
+            -(int(x["label"].replace("p","")) if x["type"] == "video" and x["label"].endswith("p") else x.get("tbr", 0))
         ))
+
+        # إزالة tbr من النتيجة النهائية
+        for f in formats:
+            f.pop("tbr", None)
 
         response = jsonify({
             "title": info.get("title", "بدون عنوان"),
