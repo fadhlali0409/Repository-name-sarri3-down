@@ -30,52 +30,66 @@ def download():
 
         formats = []
 
-        # جرب جودات مختلفة
-        for quality in ["1080", "720", "480", "360"]:
+        # قائمة الطلبات حسب كل منصة
+        requests_list = [
+            # فيديو جودات مختلفة
+            {"url": url, "videoQuality": "1080", "filenameStyle": "pretty"},
+            {"url": url, "videoQuality": "720", "filenameStyle": "pretty"},
+            {"url": url, "videoQuality": "480", "filenameStyle": "pretty"},
+            {"url": url, "videoQuality": "360", "filenameStyle": "pretty"},
+            # صوت
+            {"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
+            # فيديو بدون صوت مدمج
+            {"url": url, "downloadMode": "mute", "filenameStyle": "pretty"},
+        ]
+
+        seen_urls = set()
+
+        for payload in requests_list:
             try:
                 r = req.post(
                     f"{COBALT_API}/",
-                    json={"url": url, "videoQuality": quality, "filenameStyle": "pretty"},
+                    json=payload,
                     headers=headers,
                     timeout=20
                 )
-                if r.status_code == 200:
-                    d = r.json()
-                    status = d.get("status", "")
+                if r.status_code != 200:
+                    continue
+
+                d = r.json()
+                status = d.get("status", "")
+
+                if status == "picker":
+                    # للمنصات التي ترجع خيارات متعددة
+                    for item in (d.get("picker") or []):
+                        item_url = item.get("url", "")
+                        if item_url and item_url not in seen_urls:
+                            seen_urls.add(item_url)
+                            formats.append({
+                                "label": "فيديو",
+                                "ext": "MP4",
+                                "size": "—",
+                                "type": "video",
+                                "url": item_url
+                            })
+
+                elif status in ["stream", "redirect", "tunnel"]:
                     dl_url = d.get("url") or d.get("stream")
-                    if status in ["stream", "redirect", "tunnel", "picker"] and dl_url:
+                    if dl_url and dl_url not in seen_urls:
+                        seen_urls.add(dl_url)
+                        is_audio = payload.get("downloadMode") == "audio"
+                        quality = payload.get("videoQuality", "")
+                        label = "Audio MP3" if is_audio else (f"{quality}p" if quality else "فيديو")
                         formats.append({
-                            "label": f"{quality}p",
-                            "ext": "MP4",
+                            "label": label,
+                            "ext": "MP3" if is_audio else "MP4",
                             "size": "—",
-                            "type": "video",
+                            "type": "audio" if is_audio else "video",
                             "url": dl_url
                         })
-                        break
+
             except:
                 continue
-
-        # أضف خيار الصوت
-        try:
-            r = req.post(
-                f"{COBALT_API}/",
-                json={"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
-                headers=headers,
-                timeout=20
-            )
-            if r.status_code == 200:
-                d = r.json()
-                dl_url = d.get("url") or d.get("stream")
-                if dl_url:
-                    formats.append({
-                        "label": "Audio MP3",
-                        "ext": "MP3",
-                        "size": "—",
-                        "type": "audio",
-                        "url": dl_url
-                    })
-        except:
-            pass
 
         if not formats:
             return jsonify({"error": "تعذّر تحليل الرابط، جرب رابطاً آخر"}), 400
@@ -85,7 +99,7 @@ def download():
             "thumbnail": "",
             "duration": "",
             "platform": "Auto",
-            "formats": formats
+            "formats": formats[:10]
         })
         res.headers["Access-Control-Allow-Origin"] = "*"
         return res
