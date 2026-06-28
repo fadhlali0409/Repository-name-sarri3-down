@@ -3,8 +3,7 @@ import requests as req
 
 app = Flask(__name__)
 
-RAPIDAPI_KEY = "a5ae9ead30msh2f29ecfb811f6dap1c7b51jsncc3045951bc0"
-RAPIDAPI_HOST = "auto-download-all-in-one.p.rapidapi.com"
+COBALT_API = "https://cobalt-production-712b.up.railway.app"
 
 @app.route("/")
 def home():
@@ -25,55 +24,67 @@ def download():
 
     try:
         headers = {
-            "x-rapidapi-key": RAPIDAPI_KEY,
-            "x-rapidapi-host": RAPIDAPI_HOST,
+            "Accept": "application/json",
             "Content-Type": "application/json"
         }
 
-        response = req.post(
-            "https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink",
-            json={"url": url},
-            headers=headers,
-            timeout=30
-        )
-
-        result = response.json()
-
-        if response.status_code != 200 or not result:
-            return jsonify({"error": "تعذّر تحليل الرابط"}), 400
-
         formats = []
-        medias = result.get("medias", [])
 
-        for i, m in enumerate(medias[:10]):
-            murl = m.get("url", "")
-            quality = m.get("quality", "")
-            ext = m.get("extension", "mp4")
-            size = m.get("size", 0)
-
-            if not murl:
+        # جرب جودات مختلفة
+        for quality in ["1080", "720", "480", "360"]:
+            try:
+                r = req.post(
+                    f"{COBALT_API}/",
+                    json={"url": url, "videoQuality": quality, "filenameStyle": "pretty"},
+                    headers=headers,
+                    timeout=20
+                )
+                if r.status_code == 200:
+                    d = r.json()
+                    status = d.get("status", "")
+                    dl_url = d.get("url") or d.get("stream")
+                    if status in ["stream", "redirect", "tunnel", "picker"] and dl_url:
+                        formats.append({
+                            "label": f"{quality}p",
+                            "ext": "MP4",
+                            "size": "—",
+                            "type": "video",
+                            "url": dl_url
+                        })
+                        break
+            except:
                 continue
 
-            label = quality if quality else f"خيار {i+1}"
-            size_str = f"{round(size/1024/1024)}MB" if size else "—"
-            ftype = "audio" if ext in ["mp3", "m4a", "aac"] else "video"
-
-            formats.append({
-                "label": label,
-                "ext": ext.upper(),
-                "size": size_str,
-                "type": ftype,
-                "url": murl
-            })
+        # أضف خيار الصوت
+        try:
+            r = req.post(
+                f"{COBALT_API}/",
+                json={"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
+                headers=headers,
+                timeout=20
+            )
+            if r.status_code == 200:
+                d = r.json()
+                dl_url = d.get("url") or d.get("stream")
+                if dl_url:
+                    formats.append({
+                        "label": "Audio MP3",
+                        "ext": "MP3",
+                        "size": "—",
+                        "type": "audio",
+                        "url": dl_url
+                    })
+        except:
+            pass
 
         if not formats:
-            return jsonify({"error": "لا توجد صيغ متاحة"}), 400
+            return jsonify({"error": "تعذّر تحليل الرابط، جرب رابطاً آخر"}), 400
 
         res = jsonify({
-            "title": result.get("title", "بدون عنوان"),
-            "thumbnail": result.get("thumbnail", ""),
-            "duration": result.get("duration", ""),
-            "platform": result.get("source", "Unknown"),
+            "title": "جاهز للتحميل",
+            "thumbnail": "",
+            "duration": "",
+            "platform": "Auto",
             "formats": formats
         })
         res.headers["Access-Control-Allow-Origin"] = "*"
