@@ -1,13 +1,131 @@
 from flask import Flask, render_template, request, jsonify
 import requests as req
+import yt_dlp
 
 app = Flask(__name__)
 
 COBALT_API = "https://cobalt-production-712b.up.railway.app"
 
+def try_cobalt(url):
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    is_twitter = "twitter.com" in url or "x.com" in url
+    is_youtube = "youtube.com" in url or "youtu.be" in url
+
+    if is_youtube:
+        payloads = [
+            {"url": url, "videoQuality": "1080", "youtubeVideoCodec": "h264", "filenameStyle": "pretty"},
+            {"url": url, "videoQuality": "720", "youtubeVideoCodec": "h264", "filenameStyle": "pretty"},
+            {"url": url, "videoQuality": "480", "youtubeVideoCodec": "h264", "filenameStyle": "pretty"},
+            {"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
+        ]
+    elif is_twitter:
+        payloads = [
+            {"url": url, "videoQuality": "720", "twitterGif": False, "filenameStyle": "pretty"},
+            {"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
+        ]
+    else:
+        payloads = [
+            {"url": url, "videoQuality": "1080", "filenameStyle": "pretty"},
+            {"url": url, "videoQuality": "720", "filenameStyle": "pretty"},
+            {"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
+        ]
+
+    formats = []
+    seen = set()
+
+    for payload in payloads:
+        try:
+            r = req.post(f"{COBALT_API}/", json=payload, headers=headers, timeout=20)
+            if r.status_code != 200:
+                continue
+            d = r.json()
+            status = d.get("status", "")
+
+            if status == "picker":
+                for item in (d.get("picker") or []):
+                    u = item.get("url", "")
+                    if u and u not in seen:
+                        seen.add(u)
+                        formats.append({"label": "فيديو", "ext": "MP4", "size": "—", "type": "video", "url": u})
+
+            elif status in ["stream", "redirect", "tunnel"]:
+                u = d.get("url") or d.get("stream")
+                if u and u not in seen:
+                    seen.add(u)
+                    is_audio = payload.get("downloadMode") == "audio"
+                    q = payload.get("videoQuality", "")
+                    formats.append({
+                        "label": "Audio MP3" if is_audio else (f"{q}p" if q else "فيديو"),
+                        "ext": "MP3" if is_audio else "MP4",
+                        "size": "—",
+                        "type": "audio" if is_audio else "video",
+                        "url": u
+                    })
+        except:
+            continue
+
+    return formats
+
+
+def try_ytdlp(url):
+    try:
+        ydl_opts = {"quiet": True, "no_warnings": True}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+
+        formats = []
+        seen = set()
+
+        for f in (info.get("formats") or []):
+            furl = f.get("url", "")
+            height = f.get("height")
+            acodec = f.get("acodec", "none")
+            vcodec = f.get("vcodec", "none")
+            ext = f.get("ext", "mp4")
+            tbr = f.get("tbr") or 0
+
+            if not furl:
+                continue
+
+            if vcodec != "none" and acodec != "none" and height:
+                label = f"{height}p"
+                ftype = "video"
+            elif acodec != "none" and vcodec == "none":
+                label = f"Audio ({ext.upper()})"
+                ftype = "audio"
+            else:
+                continue
+
+            key = f"{label}_{round(tbr)}"
+            if key in seen:
+                continue
+            seen.add(key)
+
+            size = f.get("filesize") or f.get("filesize_approx")
+            size_str = f"{round(size/1024/1024)}MB" if size else "—"
+
+            formats.append({
+                "label": label,
+                "ext": ext.upper(),
+                "size": size_str,
+                "type": ftype,
+                "url": furl
+            })
+
+        formats.sort(key=lambda x: (
+            0 if x["type"] == "video" else 1,
+            -(int(x["label"].replace("p","")) if x["type"] == "video" and x["label"].endswith("p") else 0)
+        ))
+
+        return formats[:8], info.get("title",""), info.get("thumbnail",""), info.get("duration_string","")
+    except:
+        return [], "", "", ""
+
+
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/api/download", methods=["POST", "OPTIONS"])
 def download():
@@ -23,81 +141,21 @@ def download():
         return jsonify({"error": "الرابط مطلوب"}), 400
 
     try:
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-        }
+        # جرب Cobalt أولاً
+        formats = try_cobalt(url)
+        title, thumbnail, duration = "جاهز للتحميل", "", ""
 
-        formats = []
-
-        # قائمة الطلبات حسب كل منصة
-        requests_list = [
-            # فيديو جودات مختلفة
-            {"url": url, "videoQuality": "1080", "filenameStyle": "pretty"},
-            {"url": url, "videoQuality": "720", "filenameStyle": "pretty"},
-            {"url": url, "videoQuality": "480", "filenameStyle": "pretty"},
-            {"url": url, "videoQuality": "360", "filenameStyle": "pretty"},
-            # صوت
-            {"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
-            # فيديو بدون صوت مدمج
-            {"url": url, "downloadMode": "mute", "filenameStyle": "pretty"},
-        ]
-
-        seen_urls = set()
-
-        for payload in requests_list:
-            try:
-                r = req.post(
-                    f"{COBALT_API}/",
-                    json=payload,
-                    headers=headers,
-                    timeout=20
-                )
-                if r.status_code != 200:
-                    continue
-
-                d = r.json()
-                status = d.get("status", "")
-
-                if status == "picker":
-                    # للمنصات التي ترجع خيارات متعددة
-                    for item in (d.get("picker") or []):
-                        item_url = item.get("url", "")
-                        if item_url and item_url not in seen_urls:
-                            seen_urls.add(item_url)
-                            formats.append({
-                                "label": "فيديو",
-                                "ext": "MP4",
-                                "size": "—",
-                                "type": "video",
-                                "url": item_url
-                            })
-
-                elif status in ["stream", "redirect", "tunnel"]:
-                    dl_url = d.get("url") or d.get("stream")
-                    if dl_url and dl_url not in seen_urls:
-                        seen_urls.add(dl_url)
-                        is_audio = payload.get("downloadMode") == "audio"
-                        quality = payload.get("videoQuality", "")
-                        label = "Audio MP3" if is_audio else (f"{quality}p" if quality else "فيديو")
-                        formats.append({
-                            "label": label,
-                            "ext": "MP3" if is_audio else "MP4",
-                            "size": "—",
-                            "type": "audio" if is_audio else "video",
-                            "url": dl_url
-                        })
-
-            except:
-                continue
+        # إذا فشل Cobalt جرب yt-dlp
+        if not formats:
+            formats, title, thumbnail, duration = try_ytdlp(url)
 
         if not formats:
             return jsonify({"error": "تعذّر تحليل الرابط، جرب رابطاً آخر"}), 400
 
         res = jsonify({
-            "title": "جاهز للتحميل",
-            "thumbnail": "",
-            "duration": "",
+            "title": title,
+            "thumbnail": thumbnail,
+            "duration": duration,
             "platform": "Auto",
             "formats": formats[:10]
         })
