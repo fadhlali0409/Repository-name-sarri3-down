@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 import requests as req
-import os
 
 app = Flask(__name__)
 
-RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY", "")
+RAPIDAPI_KEY = "a5ae9ead30msh2f29ecfb811f6dap1c7b51jsncc3045951bc0"
 RAPIDAPI_HOST = "auto-download-all-in-one.p.rapidapi.com"
 
 @app.route("/")
@@ -43,7 +42,6 @@ def download():
         if response.status_code != 200 or not result:
             return jsonify({"error": "تعذّر تحليل الرابط"}), 400
 
-        # بناء قائمة الصيغ
         formats = []
         medias = result.get("medias", [])
 
