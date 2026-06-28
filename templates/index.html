@@ -83,4 +83,248 @@ nav {
 .dl-btn {
   background: linear-gradient(135deg, var(--accent), #0055cc);
   color:#fff; border:none; padding:11px 24px; border-radius:10px;
-  font-family:'Cairo',sans
+  font-family:'Cairo',sans-serif; font-size:14px; font-weight:700;
+  cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:7px;
+  transition: opacity .2s, transform .1s;
+}
+.dl-btn:hover { opacity:.88; transform:translateY(-1px); }
+.dl-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.hint { color:var(--muted); font-size:11px; margin-top:10px; text-align:center; }
+.platforms {
+  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+  max-width:700px; margin:28px auto 0;
+}
+.ptag {
+  display:flex; align-items:center; gap:6px;
+  background:var(--card); border:1px solid var(--border);
+  padding:5px 13px; border-radius:25px; font-size:12px; font-weight:600;
+  cursor:pointer; transition:background .2s, border-color .2s;
+}
+.ptag:hover { background:rgba(26,143,255,0.1); border-color:var(--accent); }
+.ptag .dot { width:7px; height:7px; border-radius:50%; }
+.result-area { max-width:660px; margin:28px auto 0; padding:0 16px; position:relative; z-index:1; }
+.loading { display:none; text-align:center; padding:48px 0; color:var(--muted); }
+.loading.show { display:block; }
+.spinner {
+  width:38px; height:38px; border:3px solid var(--border); border-top-color:var(--accent);
+  border-radius:50%; animation:spin .65s linear infinite; margin:0 auto 14px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.error-box {
+  display:none; background:rgba(255,50,50,0.07); border:1px solid rgba(255,80,80,0.25);
+  border-radius:12px; padding:16px 20px; color:#ff7070; text-align:center; font-size:14px;
+}
+.error-box.show { display:block; }
+.result-card {
+  display:none; background:rgba(8,18,36,0.92); border:1px solid var(--border);
+  border-radius:20px; padding:22px; backdrop-filter:blur(12px);
+}
+.result-card.show { display:block; }
+.video-info { display:flex; gap:14px; align-items:flex-start; margin-bottom:20px; }
+.thumb-wrap {
+  width:110px; height:72px; border-radius:10px; overflow:hidden;
+  flex-shrink:0; background:#0a1628; display:flex; align-items:center; justify-content:center; font-size:28px;
+}
+.thumb-wrap img { width:100%; height:100%; object-fit:cover; }
+.vmeta { flex:1; min-width:0; }
+.pbadge {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:10px; font-weight:700; padding:3px 10px; border-radius:15px;
+  margin-bottom:6px; border:1px solid;
+}
+.vmeta h3 { font-size:14px; font-weight:700; line-height:1.4; margin-bottom:4px; }
+.vmeta p { color:var(--muted); font-size:12px; }
+.formats-label { font-size:12px; font-weight:700; color:var(--muted); margin-bottom:12px; }
+.formats-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.fmt-item {
+  display:flex; align-items:center; justify-content:space-between;
+  background:rgba(255,255,255,0.035); border:1px solid var(--border);
+  border-radius:11px; padding:11px 13px; transition:background .2s, border-color .2s;
+}
+.fmt-item:hover { background:rgba(26,143,255,0.07); border-color:rgba(26,143,255,0.4); }
+.fmt-info .qlabel { font-size:13px; font-weight:700; }
+.fmt-info .qext { font-size:10px; color:var(--muted); margin-top:2px; }
+.fmt-dl {
+  background:var(--accent); color:#fff; border:none;
+  padding:6px 14px; border-radius:8px;
+  font-family:'Cairo',sans-serif; font-size:11px; font-weight:700;
+  cursor:pointer; transition:opacity .2s;
+}
+.fmt-dl:hover { opacity:.82; }
+.features {
+  position:relative; z-index:1; max-width:920px; margin:64px auto 40px;
+  padding:0 20px; display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px;
+}
+.feat {
+  background:var(--card); border:1px solid var(--border); border-radius:18px;
+  padding:26px 20px; text-align:center; transition:transform .2s, border-color .25s;
+}
+.feat:hover { transform:translateY(-4px); border-color:rgba(26,143,255,0.45); }
+.feat-icon { font-size:30px; margin-bottom:12px; display:block; }
+.feat h3 { font-size:15px; font-weight:700; margin-bottom:7px; }
+.feat p { font-size:12px; color:var(--muted); line-height:1.75; }
+footer {
+  position:relative; z-index:1; text-align:center;
+  padding:32px 20px; border-top:1px solid var(--border);
+  color:var(--muted); font-size:12px;
+}
+@media(max-width:580px){
+  nav { padding:12px 16px; }
+  .nav-links { display:none; }
+  .formats-grid { grid-template-columns:1fr; }
+  .features { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">⚡ سريع داون</div>
+  <ul class="nav-links">
+    <li><a href="#">الرئيسية</a></li>
+    <li><a href="#">المنصات</a></li>
+    <li><a href="#">كيف يعمل؟</a></li>
+  </ul>
+</nav>
+<div class="hero">
+  <div class="badge">🚀 مجاني · بدون تسجيل · بدون برامج</div>
+  <h1>حمّل الوسائط العامة<br><span>في ثوانٍ</span></h1>
+  <p>الصق رابطاً من منصتك المفضلة وحمّل الفيديوهات أو الصور أو الصوت بأفضل جودة.</p>
+  <div class="search-wrap">
+    <div class="search-box">
+      <button class="paste-btn" onclick="pasteURL()">📋</button>
+      <input type="text" id="urlInput" placeholder="الصق رابط يوتيوب، تيك توك، انستقرام..."/>
+      <button class="dl-btn" id="dlBtn" onclick="analyze()">↓ تحليل</button>
+    </div>
+    <p class="hint">⚠️ للاستخدام الشخصي فقط · احترم حقوق الملكية الفكرية</p>
+  </div>
+  <div class="platforms">
+    <div class="ptag"><span class="dot" style="background:#ff0000"></span>YouTube</div>
+    <div class="ptag"><span class="dot" style="background:#222"></span>TikTok</div>
+    <div class="ptag"><span class="dot" style="background:#e1306c"></span>Instagram</div>
+    <div class="ptag"><span class="dot" style="background:#1877f2"></span>Facebook</div>
+    <div class="ptag"><span class="dot" style="background:#1da1f2"></span>Twitter / X</div>
+    <div class="ptag"><span class="dot" style="background:#ff4500"></span>Reddit</div>
+    <div class="ptag"><span class="dot" style="background:#fffc00"></span>Snapchat</div>
+    <div class="ptag"><span class="dot" style="background:#e60023"></span>Pinterest</div>
+    <div class="ptag"><span class="dot" style="background:#ff5500"></span>SoundCloud</div>
+    <div class="ptag"><span class="dot" style="background:#0077b5"></span>LinkedIn</div>
+  </div>
+</div>
+<div class="result-area">
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>جارٍ تحليل الرابط...</p>
+  </div>
+  <div class="error-box" id="errorBox"></div>
+  <div class="result-card" id="resultCard">
+    <div class="video-info">
+      <div class="thumb-wrap" id="thumbWrap">🎬</div>
+      <div class="vmeta">
+        <div class="pbadge" id="pbadge">● YouTube</div>
+        <h3 id="vtitle">—</h3>
+        <p id="vdur">—</p>
+      </div>
+    </div>
+    <div class="formats-label">خيارات التحميل</div>
+    <div class="formats-grid" id="fmtGrid"></div>
+  </div>
+</div>
+<div class="features">
+  <div class="feat"><span class="feat-icon">⚡</span><h3>سرعة فائقة</h3><p>تحليل فوري وتحميل بأعلى سرعة ممكنة</p></div>
+  <div class="feat"><span class="feat-icon">🎯</span><h3>جودات متعددة</h3><p>من 4K حتى MP3 — اختر ما يناسبك</p></div>
+  <div class="feat"><span class="feat-icon">🔒</span><h3>خصوصية تامة</h3><p>لا نخزن روابطك أو بياناتك</p></div>
+  <div class="feat"><span class="feat-icon">🌐</span><h3>+10 منصة</h3><p>يوتيوب، تيك توك، انستقرام وغيرها</p></div>
+</div>
+<footer>⚡ سريع داون · للاستخدام الشخصي فقط</footer>
+<script>
+const PC = {
+  YouTube:{color:'#ff0000',bg:'rgba(255,0,0,0.1)',icon:'▶️'},
+  TikTok:{color:'#69c9d0',bg:'rgba(105,201,208,0.1)',icon:'🎵'},
+  Instagram:{color:'#e1306c',bg:'rgba(225,48,108,0.1)',icon:'📸'},
+  Facebook:{color:'#1877f2',bg:'rgba(24,119,242,0.1)',icon:'👤'},
+  Twitter:{color:'#1da1f2',bg:'rgba(29,161,242,0.1)',icon:'🐦'},
+  Reddit:{color:'#ff4500',bg:'rgba(255,69,0,0.1)',icon:'🔴'},
+};
+function getPS(name){
+  for(const[k,v]of Object.entries(PC)){
+    if(name.toLowerCase().includes(k.toLowerCase())) return{...v,name:k};
+  }
+  return{color:'#7aa3cc',bg:'rgba(122,163,204,0.1)',icon:'🌐',name};
+}
+async function pasteURL(){
+  try{ const t=await navigator.clipboard.readText(); document.getElementById('urlInput').value=t; }
+  catch{ document.getElementById('urlInput').focus(); }
+}
+function setLoading(on){
+  document.getElementById('loading').classList.toggle('show',on);
+  document.getElementById('dlBtn').disabled=on;
+}
+function showError(msg){
+  const el=document.getElementById('errorBox');
+  el.textContent='⚠️ '+msg; el.classList.add('show');
+}
+function hideAll(){
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('errorBox').classList.remove('show');
+}
+async function analyze(){
+  const url=document.getElementById('urlInput').value.trim();
+  if(!url){showError('الرجاء إدخال رابط');return;}
+  try{new URL(url);}catch{showError('الرابط غير صحيح');return;}
+  hideAll(); setLoading(true);
+  try{
+    const res=await fetch('/api/download',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url})
+    });
+    const data=await res.json();
+    if(!res.ok||data.error){showError(data.error||'حدث خطأ');return;}
+    renderResult(data);
+  }catch(err){
+    showError('تعذّر الاتصال بالخادم');
+  }finally{setLoading(false);}
+}
+function renderResult(data){
+  const ps=getPS(data.platform||'');
+  const badge=document.getElementById('pbadge');
+  badge.textContent=`● ${ps.name}`;
+  badge.style.cssText=`color:${ps.color};background:${ps.bg};border-color:${ps.color}44;display:inline-flex;`;
+  const tw=document.getElementById('thumbWrap');
+  if(data.thumbnail){
+    tw.innerHTML=`<img src="${data.thumbnail}" alt="thumb" onerror="this.parentElement.textContent='${ps.icon}'">`;
+  }else{ tw.textContent=ps.icon; }
+  document.getElementById('vtitle').textContent=data.title||'بدون عنوان';
+  document.getElementById('vdur').textContent=data.duration?`المدة: ${data.duration}`:'';
+  const grid=document.getElementById('fmtGrid');
+  grid.innerHTML='';
+  if(!data.formats||data.formats.length===0){
+    grid.innerHTML='<p style="color:var(--muted);font-size:13px;grid-column:span 2;text-align:center;padding:16px;">لا توجد صيغ متاحة</p>';
+  }else{
+    data.formats.forEach(f=>{
+      const el=document.createElement('div');
+      el.className='fmt-item';
+      el.innerHTML=`
+        <div class="fmt-info">
+          <div class="qlabel">${f.label}</div>
+          <div class="qext">${f.ext} · ${f.size}</div>
+        </div>
+        <button class="fmt-dl" onclick="doDownload('${encodeURIComponent(f.url)}')">↓ تحميل</button>
+      `;
+      grid.appendChild(el);
+    });
+  }
+  document.getElementById('resultCard').classList.add('show');
+}
+function doDownload(encodedUrl){
+  const url=decodeURIComponent(encodedUrl);
+  const a=document.createElement('a');
+  a.href=url; a.target='_blank';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+document.getElementById('urlInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter') analyze();
+});
+</script>
+</body>
+</html>
