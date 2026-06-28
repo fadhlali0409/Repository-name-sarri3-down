@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request, jsonify, Response
-import yt_dlp
+from flask import Flask, render_template, request, jsonify
 import requests as req
+import os
 
 app = Flask(__name__)
+
+RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY", "")
+RAPIDAPI_HOST = "auto-download-all-in-one.p.rapidapi.com"
 
 @app.route("/")
 def home():
@@ -22,109 +25,61 @@ def download():
         return jsonify({"error": "الرابط مطلوب"}), 400
 
     try:
-        ydl_opts = {
-            "quiet": True,
-            "no_warnings": True,
+        headers = {
+            "x-rapidapi-key": RAPIDAPI_KEY,
+            "x-rapidapi-host": RAPIDAPI_HOST,
+            "Content-Type": "application/json"
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
 
+        response = req.post(
+            "https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink",
+            json={"url": url},
+            headers=headers,
+            timeout=30
+        )
+
+        result = response.json()
+
+        if response.status_code != 200 or not result:
+            return jsonify({"error": "تعذّر تحليل الرابط"}), 400
+
+        # بناء قائمة الصيغ
         formats = []
-        seen = set()
+        medias = result.get("medias", [])
 
-        # يوتيوب — نختار formats تحتوي صوت وصورة معاً
-        for f in (info.get("formats") or []):
-            furl = f.get("url", "")
-            height = f.get("height")
-            acodec = f.get("acodec", "none")
-            vcodec = f.get("vcodec", "none")
-            ext = f.get("ext", "mp4")
-            tbr = f.get("tbr") or 0
+        for i, m in enumerate(medias[:10]):
+            murl = m.get("url", "")
+            quality = m.get("quality", "")
+            ext = m.get("extension", "mp4")
+            size = m.get("size", 0)
 
-            if not furl:
+            if not murl:
                 continue
 
-            # فيديو مع صوت معاً فقط
-            if vcodec != "none" and acodec != "none" and height:
-                label = f"{height}p"
-                ftype = "video"
-            elif acodec != "none" and vcodec == "none":
-                label = f"Audio ({ext.upper()})"
-                ftype = "audio"
-            else:
-                continue
-
-            key = f"{label}_{round(tbr)}"
-            if key in seen:
-                continue
-            seen.add(key)
-
-            size = f.get("filesize") or f.get("filesize_approx")
+            label = quality if quality else f"خيار {i+1}"
             size_str = f"{round(size/1024/1024)}MB" if size else "—"
+            ftype = "audio" if ext in ["mp3", "m4a", "aac"] else "video"
 
             formats.append({
                 "label": label,
                 "ext": ext.upper(),
                 "size": size_str,
                 "type": ftype,
-                "url": f"/api/proxy?url={req.utils.quote(furl)}&referer={req.utils.quote(url)}",
-                "tbr": tbr
+                "url": murl
             })
 
-        formats.sort(key=lambda x: (
-            0 if x["type"] == "video" else 1,
-            -(int(x["label"].replace("p","")) if x["type"] == "video" and x["label"].endswith("p") else x.get("tbr",0))
-        ))
-
-        for f in formats:
-            f.pop("tbr", None)
-
         if not formats:
-            return jsonify({"error": "لا توجد صيغ متاحة لهذا الرابط"}), 400
+            return jsonify({"error": "لا توجد صيغ متاحة"}), 400
 
         res = jsonify({
-            "title": info.get("title", "بدون عنوان"),
-            "thumbnail": info.get("thumbnail", ""),
-            "duration": info.get("duration_string", ""),
-            "platform": info.get("extractor_key", "Unknown"),
-            "formats": formats[:10]
+            "title": result.get("title", "بدون عنوان"),
+            "thumbnail": result.get("thumbnail", ""),
+            "duration": result.get("duration", ""),
+            "platform": result.get("source", "Unknown"),
+            "formats": formats
         })
         res.headers["Access-Control-Allow-Origin"] = "*"
         return res
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/proxy")
-def proxy():
-    url = request.args.get("url", "")
-    referer = request.args.get("referer", "https://www.tiktok.com/")
-    if not url:
-        return "No URL", 400
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-            "Referer": referer,
-            "Origin": referer,
-        }
-        r = req.get(url, headers=headers, stream=True, timeout=60)
-        content_type = r.headers.get("Content-Type", "video/mp4")
-        content_length = r.headers.get("Content-Length")
-
-        response_headers = {
-            "Content-Disposition": "attachment; filename=video.mp4",
-            "Content-Type": content_type,
-        }
-        if content_length:
-            response_headers["Content-Length"] = content_length
-
-        def generate():
-            for chunk in r.iter_content(chunk_size=65536):
-                if chunk:
-                    yield chunk
-
-        return Response(generate(), headers=response_headers)
-
-    except Exception as e:
-        return str(e), 500
