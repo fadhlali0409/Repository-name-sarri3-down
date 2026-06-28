@@ -25,7 +25,6 @@ def download():
         ydl_opts = {
             "quiet": True,
             "no_warnings": True,
-            "format": "bestvideo+bestaudio/best",
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -33,6 +32,7 @@ def download():
         formats = []
         seen = set()
 
+        # يوتيوب — نختار formats تحتوي صوت وصورة معاً
         for f in (info.get("formats") or []):
             furl = f.get("url", "")
             height = f.get("height")
@@ -44,7 +44,8 @@ def download():
             if not furl:
                 continue
 
-            if vcodec != "none" and height:
+            # فيديو مع صوت معاً فقط
+            if vcodec != "none" and acodec != "none" and height:
                 label = f"{height}p"
                 ftype = "video"
             elif acodec != "none" and vcodec == "none":
@@ -61,15 +62,12 @@ def download():
             size = f.get("filesize") or f.get("filesize_approx")
             size_str = f"{round(size/1024/1024)}MB" if size else "—"
 
-            http_headers = f.get("http_headers", {})
-
             formats.append({
                 "label": label,
                 "ext": ext.upper(),
                 "size": size_str,
                 "type": ftype,
-                "url": f"/api/proxy?url={req.utils.quote(furl)}",
-                "headers": http_headers,
+                "url": f"/api/proxy?url={req.utils.quote(furl)}&referer={req.utils.quote(url)}",
                 "tbr": tbr
             })
 
@@ -80,7 +78,9 @@ def download():
 
         for f in formats:
             f.pop("tbr", None)
-            f.pop("headers", None)
+
+        if not formats:
+            return jsonify({"error": "لا توجد صيغ متاحة لهذا الرابط"}), 400
 
         res = jsonify({
             "title": info.get("title", "بدون عنوان"),
@@ -99,21 +99,32 @@ def download():
 @app.route("/api/proxy")
 def proxy():
     url = request.args.get("url", "")
+    referer = request.args.get("referer", "https://www.tiktok.com/")
     if not url:
         return "No URL", 400
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Referer": "https://www.youtube.com/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+            "Referer": referer,
+            "Origin": referer,
         }
         r = req.get(url, headers=headers, stream=True, timeout=60)
+        content_type = r.headers.get("Content-Type", "video/mp4")
+        content_length = r.headers.get("Content-Length")
+
+        response_headers = {
+            "Content-Disposition": "attachment; filename=video.mp4",
+            "Content-Type": content_type,
+        }
+        if content_length:
+            response_headers["Content-Length"] = content_length
+
         def generate():
-            for chunk in r.iter_content(chunk_size=8192):
-                yield chunk
-        return Response(
-            generate(),
-            content_type=r.headers.get("Content-Type", "video/mp4"),
-            headers={"Content-Disposition": "attachment; filename=video.mp4"}
-        )
+            for chunk in r.iter_content(chunk_size=65536):
+                if chunk:
+                    yield chunk
+
+        return Response(generate(), headers=response_headers)
+
     except Exception as e:
         return str(e), 500
