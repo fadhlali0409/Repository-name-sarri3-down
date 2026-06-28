@@ -1,9 +1,8 @@
 from flask import Flask, render_template, request, jsonify, Response
-import requests
+import yt_dlp
+import requests as req
 
 app = Flask(__name__)
-
-COBALT_API = "https://api.cobalt.tools/"
 
 @app.route("/")
 def home():
@@ -12,10 +11,10 @@ def home():
 @app.route("/api/download", methods=["POST", "OPTIONS"])
 def download():
     if request.method == "OPTIONS":
-        response = jsonify({})
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        return response, 200
+        res = jsonify({})
+        res.headers["Access-Control-Allow-Origin"] = "*"
+        res.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return res, 200
 
     data = request.json
     url = data.get("url", "").strip()
@@ -23,78 +22,98 @@ def download():
         return jsonify({"error": "الرابط مطلوب"}), 400
 
     try:
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json"
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "format": "bestvideo+bestaudio/best",
         }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
 
-        # جرب جودات مختلفة
-        qualities = ["1080", "720", "480", "360"]
-        results = []
+        formats = []
+        seen = set()
 
-        for q in qualities:
-            try:
-                res = requests.post(COBALT_API, json={
-                    "url": url,
-                    "videoQuality": q,
-                    "filenameStyle": "pretty"
-                }, headers=headers, timeout=15)
+        for f in (info.get("formats") or []):
+            furl = f.get("url", "")
+            height = f.get("height")
+            acodec = f.get("acodec", "none")
+            vcodec = f.get("vcodec", "none")
+            ext = f.get("ext", "mp4")
+            tbr = f.get("tbr") or 0
 
-                if res.status_code == 200:
-                    d = res.json()
-                    if d.get("status") in ["stream", "redirect", "tunnel"] and d.get("url"):
-                        results.append({
-                            "label": f"{q}p",
-                            "ext": "MP4",
-                            "size": "—",
-                            "type": "video",
-                            "url": d["url"]
-                        })
-            except:
+            if not furl:
                 continue
 
-        # أضف خيار الصوت
-        try:
-            res = requests.post(COBALT_API, json={
-                "url": url,
-                "downloadMode": "audio",
-                "audioFormat": "mp3",
-                "filenameStyle": "pretty"
-            }, headers=headers, timeout=15)
+            if vcodec != "none" and height:
+                label = f"{height}p"
+                ftype = "video"
+            elif acodec != "none" and vcodec == "none":
+                label = f"Audio ({ext.upper()})"
+                ftype = "audio"
+            else:
+                continue
 
-            if res.status_code == 200:
-                d = res.json()
-                if d.get("status") in ["stream", "redirect", "tunnel"] and d.get("url"):
-                    results.append({
-                        "label": "Audio",
-                        "ext": "MP3",
-                        "size": "—",
-                        "type": "audio",
-                        "url": d["url"]
-                    })
-        except:
-            pass
+            key = f"{label}_{round(tbr)}"
+            if key in seen:
+                continue
+            seen.add(key)
 
-        if not results:
-            return jsonify({"error": "تعذّر تحليل الرابط، جرب رابطاً آخر"}), 400
+            size = f.get("filesize") or f.get("filesize_approx")
+            size_str = f"{round(size/1024/1024)}MB" if size else "—"
 
-        # احذف المكررات
-        seen = set()
-        unique = []
-        for f in results:
-            if f["url"] not in seen:
-                seen.add(f["url"])
-                unique.append(f)
+            http_headers = f.get("http_headers", {})
 
-        response = jsonify({
-            "title": "جاهز للتحميل",
-            "thumbnail": "",
-            "duration": "",
-            "platform": "Auto",
-            "formats": unique
+            formats.append({
+                "label": label,
+                "ext": ext.upper(),
+                "size": size_str,
+                "type": ftype,
+                "url": f"/api/proxy?url={req.utils.quote(furl)}",
+                "headers": http_headers,
+                "tbr": tbr
+            })
+
+        formats.sort(key=lambda x: (
+            0 if x["type"] == "video" else 1,
+            -(int(x["label"].replace("p","")) if x["type"] == "video" and x["label"].endswith("p") else x.get("tbr",0))
+        ))
+
+        for f in formats:
+            f.pop("tbr", None)
+            f.pop("headers", None)
+
+        res = jsonify({
+            "title": info.get("title", "بدون عنوان"),
+            "thumbnail": info.get("thumbnail", ""),
+            "duration": info.get("duration_string", ""),
+            "platform": info.get("extractor_key", "Unknown"),
+            "formats": formats[:10]
         })
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        return response
+        res.headers["Access-Control-Allow-Origin"] = "*"
+        return res
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/proxy")
+def proxy():
+    url = request.args.get("url", "")
+    if not url:
+        return "No URL", 400
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.youtube.com/",
+        }
+        r = req.get(url, headers=headers, stream=True, timeout=60)
+        def generate():
+            for chunk in r.iter_content(chunk_size=8192):
+                yield chunk
+        return Response(
+            generate(),
+            content_type=r.headers.get("Content-Type", "video/mp4"),
+            headers={"Content-Disposition": "attachment; filename=video.mp4"}
+        )
+    except Exception as e:
+        return str(e), 500
