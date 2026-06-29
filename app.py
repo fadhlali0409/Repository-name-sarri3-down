@@ -6,6 +6,14 @@ app = Flask(__name__)
 
 COBALT_API = "https://cobalt-production-712b.up.railway.app"
 
+def resolve_url(url):
+    # تحويل الروابط المختصرة للروابط الكاملة
+    try:
+        r = req.get(url, allow_redirects=True, timeout=10)
+        return r.url
+    except:
+        return url
+
 def get_meta(url):
     try:
         with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True}) as ydl:
@@ -138,7 +146,11 @@ def download():
         return jsonify({"error": "الرابط مطلوب"}), 400
 
     try:
-        # جلب معلومات الفيديو (عنوان وصورة)
+        # تحويل الروابط المختصرة
+        if any(x in url for x in ["fb.watch", "bit.ly", "t.co", "tinyurl"]):
+            url = resolve_url(url)
+
+        # جلب معلومات الفيديو
         meta = get_meta(url)
 
         # جرب Cobalt أولاً
