@@ -96,9 +96,7 @@ nav {
   display:flex; align-items:center; gap:5px;
   background:var(--card); border:1px solid var(--border);
   padding:4px 12px; border-radius:25px; font-size:11px; font-weight:600;
-  cursor:pointer; transition:background .2s, border-color .2s;
 }
-.ptag:hover { background:rgba(26,143,255,0.1); border-color:var(--accent); }
 .ptag .dot { width:6px; height:6px; border-radius:50%; }
 .result-area { max-width:620px; margin:24px auto 0; padding:0 16px; position:relative; z-index:1; }
 .loading { display:none; text-align:center; padding:40px 0; color:var(--muted); }
@@ -115,68 +113,81 @@ nav {
 .error-box.show { display:block; }
 .result-card {
   display:none; background:var(--card-bg); border:1px solid var(--border);
-  border-radius:20px; overflow:hidden; backdrop-filter:blur(12px);
+  border-radius:20px; overflow:hidden;
 }
 .result-card.show { display:block; }
-
-/* VIDEO INFO */
 .video-header {
   background: rgba(26,143,255,0.06);
   border-bottom: 1px solid var(--border);
-  padding: 16px;
-  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px;
+  display: flex; gap: 12px; align-items: center;
 }
 .thumb-wrap {
-  width: 120px; height: 78px; border-radius: 10px; overflow: hidden;
-  flex-shrink: 0; background: #0d2244;
-  display: flex; align-items: center; justify-content: center; font-size: 26px;
+  width:100px; height:68px; border-radius:10px; overflow:hidden;
+  flex-shrink:0; background:#0d2244; position:relative;
+  display:flex; align-items:center; justify-content:center; font-size:24px;
 }
 .thumb-wrap img { width:100%; height:100%; object-fit:cover; }
 .vmeta { flex:1; min-width:0; }
 .pbadge {
   display:inline-flex; align-items:center; gap:4px;
-  font-size:10px; font-weight:700; padding:3px 10px; border-radius:15px;
-  margin-bottom:6px; border:1px solid;
+  font-size:9px; font-weight:700; padding:2px 8px; border-radius:10px;
+  margin-bottom:5px; border:1px solid;
 }
-.vmeta h3 { font-size:13px; font-weight:700; line-height:1.4; margin-bottom:4px; }
-.vmeta .vdur { color:var(--muted); font-size:11px; }
-
-/* FORMATS */
-.formats-section { padding: 16px; }
-.formats-label {
-  font-size:11px; font-weight:700; color:var(--muted);
-  margin-bottom:12px; letter-spacing:.5px; text-transform:uppercase;
+.vmeta h3 { font-size:12px; font-weight:700; line-height:1.4; margin-bottom:3px; }
+.vdur { color:var(--muted); font-size:10px; }
+.formats-section { padding:14px; }
+.section-label {
+  display:flex; align-items:center; gap:6px;
+  font-size:10px; font-weight:700; color:var(--muted);
+  margin-bottom:10px; letter-spacing:.5px;
 }
-.formats-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.fmt-item {
-  display:flex; align-items:center; justify-content:space-between;
+.section-label .line { flex:1; height:1px; background:rgba(26,143,255,0.15); }
+.quality-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.quality-card {
   background:rgba(255,255,255,0.03); border:1px solid var(--border);
-  border-radius:11px; padding:10px 12px;
-  transition:background .2s, border-color .2s;
+  border-radius:12px; padding:10px;
+  display:flex; flex-direction:column; gap:8px;
+  transition:all .2s; cursor:pointer;
 }
-.fmt-item:hover { background:rgba(26,143,255,0.07); border-color:rgba(26,143,255,0.4); }
-.fmt-icon { font-size:18px; margin-left:8px; }
-.fmt-info { flex:1; }
-.fmt-info .qlabel { font-size:13px; font-weight:700; }
-.fmt-info .qext { font-size:10px; color:var(--muted); margin-top:1px; }
-.fmt-dl {
-  background:var(--accent); color:#fff; border:none;
-  padding:6px 12px; border-radius:8px;
-  font-family:'Cairo',sans-serif; font-size:11px; font-weight:700;
-  cursor:pointer; transition:opacity .2s; white-space:nowrap;
-  display:flex; align-items:center; gap:4px;
+.quality-card:hover { background:rgba(26,143,255,0.08); border-color:rgba(26,143,255,0.4); }
+.qcard-top { display:flex; align-items:center; justify-content:space-between; }
+.qbadge { font-size:13px; font-weight:900; color:var(--text); }
+.qbadge.best { color:var(--accent2); }
+.qicon { font-size:16px; }
+.qinfo { font-size:9px; color:var(--muted); margin-top:1px; }
+.qdl-btn {
+  background: linear-gradient(135deg, var(--accent), #0055cc);
+  color:#fff; border:none; padding:6px; border-radius:8px;
+  font-family:'Cairo',sans-serif; font-size:10px; font-weight:700;
+  cursor:pointer; width:100%;
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  transition:opacity .2s;
 }
-.fmt-dl:hover { opacity:.82; }
-.fmt-dl.audio-btn { background: linear-gradient(135deg, #7c3aed, #4f46e5); }
-
-/* FEATURES */
+.qdl-btn:hover { opacity:.82; }
+.divider { height:1px; background:rgba(26,143,255,0.1); margin:10px 0; }
+.audio-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.audio-card {
+  background:rgba(124,58,237,0.07); border:1px solid rgba(124,58,237,0.2);
+  border-radius:12px; padding:10px;
+  display:flex; flex-direction:column; gap:8px;
+}
+.adl-btn {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color:#fff; border:none; padding:6px; border-radius:8px;
+  font-family:'Cairo',sans-serif; font-size:10px; font-weight:700;
+  cursor:pointer; width:100%;
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  transition:opacity .2s;
+}
+.adl-btn:hover { opacity:.82; }
 .features {
   position:relative; z-index:1; max-width:620px; margin:40px auto 30px;
   padding:0 16px; display:grid; grid-template-columns:1fr 1fr; gap:10px;
 }
 .feat {
   background:var(--card); border:1px solid var(--border); border-radius:16px;
-  padding:18px 14px; text-align:center; transition:transform .2s, border-color .25s;
+  padding:18px 14px; text-align:center; transition:transform .2s;
 }
 .feat:hover { transform:translateY(-3px); border-color:rgba(26,143,255,0.45); }
 .feat-icon { font-size:24px; margin-bottom:8px; display:block; }
@@ -188,9 +199,8 @@ footer {
   color:var(--muted); font-size:11px;
 }
 @media(max-width:420px){
-  .formats-grid { grid-template-columns:1fr; }
-  .video-header { flex-direction:column; }
-  .thumb-wrap { width:100%; height:160px; }
+  .quality-grid { grid-template-columns:1fr; }
+  .audio-grid { grid-template-columns:1fr; }
 }
 </style>
 </head>
@@ -203,26 +213,21 @@ footer {
 <div class="hero">
   <div class="badge">🚀 مجاني · بدون تسجيل · بدون برامج</div>
   <h1>حمّل الوسائط العامة<br><span>في ثوانٍ</span></h1>
-  <p>الصق رابطاً من منصتك المفضلة وحمّل الفيديوهات أو الصور أو الصوت بأفضل جودة.</p>
+  <p>الصق رابطاً من منصتك المفضلة وحمّل الفيديوهات أو الصوت بأفضل جودة.</p>
 
   <div class="search-wrap">
     <div class="search-box">
       <button class="paste-btn" onclick="pasteURL()">📋</button>
-      <input type="text" id="urlInput" placeholder="الصق رابط تيك توك، انستقرام، سناب..."/>
+      <input type="text" id="urlInput" placeholder="الصق رابط تيك توك أو انستقرام أو سناب..."/>
       <button class="dl-btn" id="dlBtn" onclick="analyze()">↓ تحليل</button>
     </div>
     <p class="hint">⚠️ للاستخدام الشخصي فقط · احترم حقوق الملكية الفكرية</p>
   </div>
 
   <div class="platforms">
-    <div class="ptag"><span class="dot" style="background:#222"></span>TikTok</div>
+    <div class="ptag"><span class="dot" style="background:#222;border:1px solid #555"></span>TikTok</div>
     <div class="ptag"><span class="dot" style="background:#e1306c"></span>Instagram</div>
-    <div class="ptag"><span class="dot" style="background:#fffc00"></span>Snapchat</div>
-    <div class="ptag"><span class="dot" style="background:#1877f2"></span>Facebook</div>
-    <div class="ptag"><span class="dot" style="background:#ff4500"></span>Reddit</div>
-    <div class="ptag"><span class="dot" style="background:#e60023"></span>Pinterest</div>
-    <div class="ptag"><span class="dot" style="background:#ff5500"></span>SoundCloud</div>
-    <div class="ptag"><span class="dot" style="background:#0077b5"></span>LinkedIn</div>
+    <div class="ptag"><span class="dot" style="background:#fffc00;border:1px solid #999"></span>Snapchat</div>
   </div>
 </div>
 
@@ -242,8 +247,11 @@ footer {
       </div>
     </div>
     <div class="formats-section">
-      <div class="formats-label">⬇ خيارات التحميل</div>
-      <div class="formats-grid" id="fmtGrid"></div>
+      <div class="section-label">🎬 جودة الفيديو <span class="line"></span></div>
+      <div class="quality-grid" id="videoGrid"></div>
+      <div class="divider"></div>
+      <div class="section-label">🎵 الصوت فقط <span class="line"></span></div>
+      <div class="audio-grid" id="audioGrid"></div>
     </div>
   </div>
 </div>
@@ -252,7 +260,7 @@ footer {
   <div class="feat"><span class="feat-icon">⚡</span><h3>سرعة فائقة</h3><p>تحليل فوري وتحميل بأعلى سرعة</p></div>
   <div class="feat"><span class="feat-icon">🎯</span><h3>جودات متعددة</h3><p>اختر الجودة المناسبة لك</p></div>
   <div class="feat"><span class="feat-icon">🔒</span><h3>خصوصية تامة</h3><p>لا نخزن روابطك أو بياناتك</p></div>
-  <div class="feat"><span class="feat-icon">🌐</span><h3>+8 منصات</h3><p>تيك توك، انستقرام، سناب وغيرها</p></div>
+  <div class="feat"><span class="feat-icon">🌐</span><h3>3 منصات</h3><p>تيك توك، انستقرام، سناب شات</p></div>
 </div>
 
 <footer>⚡ سريع داون · للاستخدام الشخصي فقط</footer>
@@ -261,25 +269,18 @@ footer {
 const PC = {
   TikTok:{color:'#69c9d0',bg:'rgba(105,201,208,0.1)',icon:'🎵'},
   Instagram:{color:'#e1306c',bg:'rgba(225,48,108,0.1)',icon:'📸'},
-  Facebook:{color:'#1877f2',bg:'rgba(24,119,242,0.1)',icon:'👤'},
-  Twitter:{color:'#1da1f2',bg:'rgba(29,161,242,0.1)',icon:'🐦'},
-  Snapchat:{color:'#fffc00',bg:'rgba(255,252,0,0.1)',icon:'👻'},
-  Reddit:{color:'#ff4500',bg:'rgba(255,69,0,0.1)',icon:'🔴'},
-  YouTube:{color:'#ff0000',bg:'rgba(255,0,0,0.1)',icon:'▶️'},
+  Snapchat:{color:'#fffc00',bg:'rgba(255,252,0,0.08)',icon:'👻'},
 };
-
 function getPS(name){
   for(const[k,v]of Object.entries(PC)){
     if(name.toLowerCase().includes(k.toLowerCase())) return{...v,name:k};
   }
   return{color:'#7aa3cc',bg:'rgba(122,163,204,0.1)',icon:'🌐',name:'Auto'};
 }
-
 async function pasteURL(){
   try{ const t=await navigator.clipboard.readText(); document.getElementById('urlInput').value=t; }
   catch{ document.getElementById('urlInput').focus(); }
 }
-
 function setLoading(on){
   document.getElementById('loading').classList.toggle('show',on);
   document.getElementById('dlBtn').disabled=on;
@@ -292,7 +293,6 @@ function hideAll(){
   document.getElementById('resultCard').classList.remove('show');
   document.getElementById('errorBox').classList.remove('show');
 }
-
 async function analyze(){
   const url=document.getElementById('urlInput').value.trim();
   if(!url){showError('الرجاء إدخال رابط');return;}
@@ -311,7 +311,6 @@ async function analyze(){
     showError('تعذّر الاتصال بالخادم');
   }finally{setLoading(false);}
 }
-
 function renderResult(data){
   const ps=getPS(data.platform||'');
   const badge=document.getElementById('pbadge');
@@ -324,39 +323,61 @@ function renderResult(data){
   document.getElementById('vtitle').textContent=data.title||'جاهز للتحميل';
   document.getElementById('vdur').textContent=data.duration?`⏱ ${data.duration}`:'';
 
-  const grid=document.getElementById('fmtGrid');
-  grid.innerHTML='';
+  const videos = (data.formats||[]).filter(f=>f.type==='video');
+  const audios = (data.formats||[]).filter(f=>f.type==='audio');
 
-  if(!data.formats||data.formats.length===0){
-    grid.innerHTML='<p style="color:var(--muted);font-size:12px;grid-column:span 2;text-align:center;padding:16px;">لا توجد صيغ متاحة</p>';
-  }else{
-    data.formats.forEach(f=>{
-      const isAudio = f.type==='audio';
+  const vGrid=document.getElementById('videoGrid');
+  const aGrid=document.getElementById('audioGrid');
+  vGrid.innerHTML=''; aGrid.innerHTML='';
+
+  if(videos.length===0){
+    vGrid.innerHTML='<p style="color:var(--muted);font-size:11px;grid-column:span 2;text-align:center;padding:8px;">لا توجد صيغ فيديو</p>';
+  } else {
+    videos.forEach((f,i)=>{
       const el=document.createElement('div');
-      el.className='fmt-item';
+      el.className='quality-card';
       el.innerHTML=`
-        <span class="fmt-icon">${isAudio?'🎵':'🎬'}</span>
-        <div class="fmt-info">
-          <div class="qlabel">${f.label}</div>
-          <div class="qext">${f.ext} · ${f.size}</div>
+        <div class="qcard-top">
+          <div>
+            <div class="qbadge ${i===0?'best':''}">${f.label}</div>
+            <div class="qinfo">${f.ext} · ${f.size}</div>
+          </div>
+          <div class="qicon">${i===0?'🏆':'🎬'}</div>
         </div>
-        <button class="fmt-dl ${isAudio?'audio-btn':''}" onclick="doDownload('${encodeURIComponent(f.url)}')">
-          ↓ تحميل
-        </button>
+        <button class="qdl-btn" onclick="doDownload('${encodeURIComponent(f.url)}')">↓ تحميل</button>
       `;
-      grid.appendChild(el);
+      vGrid.appendChild(el);
     });
   }
+
+  if(audios.length===0){
+    aGrid.innerHTML='<p style="color:var(--muted);font-size:11px;grid-column:span 2;text-align:center;padding:8px;">لا توجد صيغ صوت</p>';
+  } else {
+    audios.forEach(f=>{
+      const el=document.createElement('div');
+      el.className='audio-card';
+      el.innerHTML=`
+        <div class="qcard-top">
+          <div>
+            <div class="qbadge">${f.label}</div>
+            <div class="qinfo">${f.ext} · ${f.size}</div>
+          </div>
+          <div class="qicon">🎵</div>
+        </div>
+        <button class="adl-btn" onclick="doDownload('${encodeURIComponent(f.url)}')">↓ تحميل</button>
+      `;
+      aGrid.appendChild(el);
+    });
+  }
+
   document.getElementById('resultCard').classList.add('show');
 }
-
 function doDownload(encodedUrl){
   const url=decodeURIComponent(encodedUrl);
   const a=document.createElement('a');
   a.href=url; a.target='_blank';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
-
 document.getElementById('urlInput').addEventListener('keydown',e=>{
   if(e.key==='Enter') analyze();
 });
