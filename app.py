@@ -6,9 +6,21 @@ app = Flask(__name__)
 
 COBALT_API = "https://cobalt-production-712b.up.railway.app"
 
+def get_meta(url):
+    try:
+        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True}) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return {
+                "title": info.get("title", "جاهز للتحميل"),
+                "thumbnail": info.get("thumbnail", ""),
+                "duration": info.get("duration_string", ""),
+                "platform": info.get("extractor_key", "Auto")
+            }
+    except:
+        return {"title": "جاهز للتحميل", "thumbnail": "", "duration": "", "platform": "Auto"}
+
 def try_cobalt(url):
     headers = {"Accept": "application/json", "Content-Type": "application/json"}
-    is_twitter = "twitter.com" in url or "x.com" in url
     is_youtube = "youtube.com" in url or "youtu.be" in url
 
     if is_youtube:
@@ -18,15 +30,12 @@ def try_cobalt(url):
             {"url": url, "videoQuality": "480", "youtubeVideoCodec": "h264", "filenameStyle": "pretty"},
             {"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
         ]
-    elif is_twitter:
-        payloads = [
-            {"url": url, "videoQuality": "720", "twitterGif": False, "filenameStyle": "pretty"},
-            {"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
-        ]
     else:
         payloads = [
             {"url": url, "videoQuality": "1080", "filenameStyle": "pretty"},
             {"url": url, "videoQuality": "720", "filenameStyle": "pretty"},
+            {"url": url, "videoQuality": "480", "filenameStyle": "pretty"},
+            {"url": url, "videoQuality": "360", "filenameStyle": "pretty"},
             {"url": url, "downloadMode": "audio", "audioFormat": "mp3", "filenameStyle": "pretty"},
         ]
 
@@ -46,7 +55,13 @@ def try_cobalt(url):
                     u = item.get("url", "")
                     if u and u not in seen:
                         seen.add(u)
-                        formats.append({"label": "فيديو", "ext": "MP4", "size": "—", "type": "video", "url": u})
+                        formats.append({
+                            "label": "فيديو",
+                            "ext": "MP4",
+                            "size": "—",
+                            "type": "video",
+                            "url": u
+                        })
 
             elif status in ["stream", "redirect", "tunnel"]:
                 u = d.get("url") or d.get("stream")
@@ -66,27 +81,20 @@ def try_cobalt(url):
 
     return formats
 
-
 def try_ytdlp(url):
     try:
-        ydl_opts = {"quiet": True, "no_warnings": True}
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True}) as ydl:
             info = ydl.extract_info(url, download=False)
-
         formats = []
         seen = set()
-
         for f in (info.get("formats") or []):
             furl = f.get("url", "")
             height = f.get("height")
             acodec = f.get("acodec", "none")
             vcodec = f.get("vcodec", "none")
             ext = f.get("ext", "mp4")
-            tbr = f.get("tbr") or 0
-
             if not furl:
                 continue
-
             if vcodec != "none" and acodec != "none" and height:
                 label = f"{height}p"
                 ftype = "video"
@@ -95,37 +103,26 @@ def try_ytdlp(url):
                 ftype = "audio"
             else:
                 continue
-
-            key = f"{label}_{round(tbr)}"
-            if key in seen:
-                continue
-            seen.add(key)
-
-            size = f.get("filesize") or f.get("filesize_approx")
-            size_str = f"{round(size/1024/1024)}MB" if size else "—"
-
-            formats.append({
-                "label": label,
-                "ext": ext.upper(),
-                "size": size_str,
-                "type": ftype,
-                "url": furl
-            })
-
+            if label not in seen:
+                seen.add(label)
+                formats.append({
+                    "label": label,
+                    "ext": ext.upper(),
+                    "size": "—",
+                    "type": ftype,
+                    "url": furl
+                })
         formats.sort(key=lambda x: (
             0 if x["type"] == "video" else 1,
             -(int(x["label"].replace("p","")) if x["type"] == "video" and x["label"].endswith("p") else 0)
         ))
-
-        return formats[:8], info.get("title",""), info.get("thumbnail",""), info.get("duration_string","")
+        return formats[:8]
     except:
-        return [], "", "", ""
-
+        return []
 
 @app.route("/")
 def home():
     return render_template("index.html")
-
 
 @app.route("/api/download", methods=["POST", "OPTIONS"])
 def download():
@@ -141,22 +138,24 @@ def download():
         return jsonify({"error": "الرابط مطلوب"}), 400
 
     try:
+        # جلب معلومات الفيديو (عنوان وصورة)
+        meta = get_meta(url)
+
         # جرب Cobalt أولاً
         formats = try_cobalt(url)
-        title, thumbnail, duration = "جاهز للتحميل", "", ""
 
-        # إذا فشل Cobalt جرب yt-dlp
+        # إذا فشل جرب yt-dlp
         if not formats:
-            formats, title, thumbnail, duration = try_ytdlp(url)
+            formats = try_ytdlp(url)
 
         if not formats:
             return jsonify({"error": "تعذّر تحليل الرابط، جرب رابطاً آخر"}), 400
 
         res = jsonify({
-            "title": title,
-            "thumbnail": thumbnail,
-            "duration": duration,
-            "platform": "Auto",
+            "title": meta["title"],
+            "thumbnail": meta["thumbnail"],
+            "duration": meta["duration"],
+            "platform": meta["platform"],
             "formats": formats[:10]
         })
         res.headers["Access-Control-Allow-Origin"] = "*"
