@@ -124,7 +124,7 @@ nav {
 }
 .thumb-wrap {
   width:100px; height:68px; border-radius:10px; overflow:hidden;
-  flex-shrink:0; background:#0d2244; position:relative;
+  flex-shrink:0; background:#0d2244;
   display:flex; align-items:center; justify-content:center; font-size:24px;
 }
 .thumb-wrap img { width:100%; height:100%; object-fit:cover; }
@@ -148,7 +148,6 @@ nav {
   background:rgba(255,255,255,0.03); border:1px solid var(--border);
   border-radius:12px; padding:10px;
   display:flex; flex-direction:column; gap:8px;
-  transition:all .2s; cursor:pointer;
 }
 .quality-card:hover { background:rgba(26,143,255,0.08); border-color:rgba(26,143,255,0.4); }
 .qcard-top { display:flex; align-items:center; justify-content:space-between; }
@@ -213,12 +212,12 @@ footer {
 <div class="hero">
   <div class="badge">🚀 مجاني · بدون تسجيل · بدون برامج</div>
   <h1>حمّل الوسائط العامة<br><span>في ثوانٍ</span></h1>
-  <p>الصق رابطاً من منصتك المفضلة وحمّل الفيديوهات أو الصوت بأفضل جودة.</p>
+  <p>الصق رابطاً من تيك توك أو انستقرام وحمّل الفيديوهات أو الصوت بأفضل جودة.</p>
 
   <div class="search-wrap">
     <div class="search-box">
       <button class="paste-btn" onclick="pasteURL()">📋</button>
-      <input type="text" id="urlInput" placeholder="الصق رابط تيك توك أو انستقرام أو سناب..."/>
+      <input type="text" id="urlInput" placeholder="الصق رابط تيك توك أو انستقرام..."/>
       <button class="dl-btn" id="dlBtn" onclick="analyze()">↓ تحليل</button>
     </div>
     <p class="hint">⚠️ للاستخدام الشخصي فقط · احترم حقوق الملكية الفكرية</p>
@@ -227,7 +226,6 @@ footer {
   <div class="platforms">
     <div class="ptag"><span class="dot" style="background:#222;border:1px solid #555"></span>TikTok</div>
     <div class="ptag"><span class="dot" style="background:#e1306c"></span>Instagram</div>
-    <div class="ptag"><span class="dot" style="background:#fffc00;border:1px solid #999"></span>Snapchat</div>
   </div>
 </div>
 
@@ -260,7 +258,7 @@ footer {
   <div class="feat"><span class="feat-icon">⚡</span><h3>سرعة فائقة</h3><p>تحليل فوري وتحميل بأعلى سرعة</p></div>
   <div class="feat"><span class="feat-icon">🎯</span><h3>جودات متعددة</h3><p>اختر الجودة المناسبة لك</p></div>
   <div class="feat"><span class="feat-icon">🔒</span><h3>خصوصية تامة</h3><p>لا نخزن روابطك أو بياناتك</p></div>
-  <div class="feat"><span class="feat-icon">🌐</span><h3>3 منصات</h3><p>تيك توك، انستقرام، سناب شات</p></div>
+  <div class="feat"><span class="feat-icon">🌐</span><h3>منصتان</h3><p>تيك توك وانستقرام</p></div>
 </div>
 
 <footer>⚡ سريع داون · للاستخدام الشخصي فقط</footer>
@@ -269,7 +267,6 @@ footer {
 const PC = {
   TikTok:{color:'#69c9d0',bg:'rgba(105,201,208,0.1)',icon:'🎵'},
   Instagram:{color:'#e1306c',bg:'rgba(225,48,108,0.1)',icon:'📸'},
-  Snapchat:{color:'#fffc00',bg:'rgba(255,252,0,0.08)',icon:'👻'},
 };
 function getPS(name){
   for(const[k,v]of Object.entries(PC)){
@@ -323,8 +320,8 @@ function renderResult(data){
   document.getElementById('vtitle').textContent=data.title||'جاهز للتحميل';
   document.getElementById('vdur').textContent=data.duration?`⏱ ${data.duration}`:'';
 
-  const videos = (data.formats||[]).filter(f=>f.type==='video');
-  const audios = (data.formats||[]).filter(f=>f.type==='audio');
+  const videos=(data.formats||[]).filter(f=>f.type==='video');
+  const audios=(data.formats||[]).filter(f=>f.type==='audio');
 
   const vGrid=document.getElementById('videoGrid');
   const aGrid=document.getElementById('audioGrid');
@@ -332,7 +329,7 @@ function renderResult(data){
 
   if(videos.length===0){
     vGrid.innerHTML='<p style="color:var(--muted);font-size:11px;grid-column:span 2;text-align:center;padding:8px;">لا توجد صيغ فيديو</p>';
-  } else {
+  }else{
     videos.forEach((f,i)=>{
       const el=document.createElement('div');
       el.className='quality-card';
@@ -352,7 +349,7 @@ function renderResult(data){
 
   if(audios.length===0){
     aGrid.innerHTML='<p style="color:var(--muted);font-size:11px;grid-column:span 2;text-align:center;padding:8px;">لا توجد صيغ صوت</p>';
-  } else {
+  }else{
     audios.forEach(f=>{
       const el=document.createElement('div');
       el.className='audio-card';
